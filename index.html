@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kahoot 2 Oyunculu Quiz</title>
+<style>
+  body {
+    font-family: "Segoe UI", sans-serif;
+    background: linear-gradient(135deg, #2b5876, #4e4376);
+    color: white;
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .screen {
+    display: none;
+    text-align: center;
+    background: rgba(0,0,0,0.3);
+    border-radius: 20px;
+    padding: 25px;
+    width: 90%;
+    max-width: 600px;
+  }
+  .active { display: block; }
+  h1 { margin-bottom: 15px; }
+  input {
+    padding: 8px;
+    border-radius: 10px;
+    border: none;
+    margin: 8px;
+    font-size: 16px;
+  }
+  button {
+    background: #fff;
+    color: #333;
+    border: none;
+    padding: 10px 20px;
+    margin: 8px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.3s;
+    font-size: 16px;
+  }
+  button:hover {
+    background: #f39c12;
+    color: white;
+  }
+  #question {
+    font-size: 22px;
+    margin-bottom: 10px;
+  }
+  .option {
+    display: block;
+    background: #fff;
+    color: #333;
+    border-radius: 10px;
+    margin: 8px auto;
+    padding: 10px;
+    width: 80%;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  .option:hover { background: #16a085; color: white; }
+  .correct { background: #27ae60 !important; color: white; }
+  .wrong { background: #e74c3c !important; color: white; }
+  #scoreboard { font-size: 18px; margin-top: 15px; }
+</style>
+</head>
+<body>
+
+<!-- === GİRİŞ EKRANI === -->
+<div id="start-screen" class="screen active">
+  <h1>Kahoot 2 Oyunculu 🎯</h1>
+  <p>Oyuncu isimlerini gir:</p>
+  <input id="player1" placeholder="1. Oyuncu Adı">
+  <input id="player2" placeholder="2. Oyuncu Adı">
+  <br>
+  <button onclick="startGame()">Başla!</button>
+</div>
+
+<!-- === OYUN EKRANI === -->
+<div id="quiz-screen" class="screen">
+  <h1 id="turn"></h1>
+  <p id="question"></p>
+  <div id="options"></div>
+  <p id="scoreboard"></p>
+  <button id="next-btn" style="display:none;" onclick="nextQuestion()">Sonraki Soru ➜</button>
+</div>
+
+<!-- === SONUÇ EKRANI === -->
+<div id="result-screen" class="screen">
+  <h1>Oyun Bitti 🎉</h1>
+  <p id="final-score"></p>
+  <p id="winner"></p>
+  <button onclick="restart()">Yeniden Başla</button>
+</div>
+
+<script>
+const questions = [
+  {
+    q: "Türkiye’nin başkenti neresidir?",
+    options: ["İstanbul", "Ankara", "İzmir", "Bursa"],
+    answer: 1
+  },
+  {
+    q: "Güneş Sistemi'ndeki en büyük gezegen hangisidir?",
+    options: ["Mars", "Jüpiter", "Venüs", "Dünya"],
+    answer: 1
+  },
+  {
+    q: "HTML ne tür bir dildir?",
+    options: ["Programlama dili", "İşaretleme dili", "Veritabanı dili", "Tarayıcı dili"],
+    answer: 1
+  },
+  {
+    q: "3 + 7 x 2 işleminin sonucu nedir?",
+    options: ["14", "20", "17", "10"],
+    answer: 2
+  },
+  {
+    q: "Işık yılı neyi ölçer?",
+    options: ["Zaman", "Işığın rengi", "Mesafe", "Yoğunluk"],
+    answer: 2
+  }
+];
+
+let player1 = "";
+let player2 = "";
+let scores = [0,0];
+let turn = 0; // 0 -> player1, 1 -> player2
+let currentQuestion = 0;
+
+function startGame() {
+  const p1 = document.getElementById("player1").value.trim();
+  const p2 = document.getElementById("player2").value.trim();
+  if (!p1 || !p2) {
+    alert("Lütfen her iki oyuncunun adını da gir!");
+    return;
+  }
+  player1 = p1;
+  player2 = p2;
+  document.getElementById("start-screen").classList.remove("active");
+  document.getElementById("quiz-screen").classList.add("active");
+  showQuestion();
+}
+
+function showQuestion() {
+  const q = questions[currentQuestion];
+  const turnPlayer = turn === 0 ? player1 : player2;
+  document.getElementById("turn").textContent = `Sıra: ${turnPlayer}`;
+  document.getElementById("question").textContent = q.q;
+  document.getElementById("options").innerHTML = "";
+  document.getElementById("next-btn").style.display = "none";
+  
+  q.options.forEach((opt, i) => {
+    const div = document.createElement("div");
+    div.className = "option";
+    div.textContent = opt;
+    div.onclick = () => checkAnswer(i, div);
+    document.getElementById("options").appendChild(div);
+  });
+
+  updateScoreboard();
+}
+
+function checkAnswer(i, selectedDiv) {
+  const q = questions[currentQuestion];
+  const options = document.querySelectorAll(".option");
+  options.forEach(opt => opt.onclick = null);
+  
+  if (i === q.answer) {
+    selectedDiv.classList.add("correct");
+    scores[turn]++;
+  } else {
+    selectedDiv.classList.add("wrong");
+    options[q.answer].classList.add("correct");
+  }
+
+  document.getElementById("next-btn").style.display = "inline-block";
+  updateScoreboard();
+}
+
+function updateScoreboard() {
+  document.getElementById("scoreboard").innerHTML = 
+    `${player1}: ${scores[0]} puan | ${player2}: ${scores[1]} puan`;
+}
+
+function nextQuestion() {
+  turn = (turn + 1) % 2;
+  if (turn === 0) currentQuestion++;
+  
+  if (currentQuestion < questions.length) {
+    showQuestion();
+  } else {
+    showResult();
+  }
+}
+
+function showResult() {
+  document.getElementById("quiz-screen").classList.remove("active");
+  document.getElementById("result-screen").classList.add("active");
+
+  document.getElementById("final-score").textContent =
+    `${player1}: ${scores[0]} puan | ${player2}: ${scores[1]} puan`;
+
+  if (scores[0] > scores[1]) {
+    document.getElementById("winner").textContent = `Kazanan: ${player1}! 🏆`;
+  } else if (scores[1] > scores[0]) {
+    document.getElementById("winner").textContent = `Kazanan: ${player2}! 🏆`;
+  } else {
+    document.getElementById("winner").textContent = "Berabere kaldınız! 🤝";
+  }
+}
+
+function restart() {
+  scores = [0,0];
+  turn = 0;
+  currentQuestion = 0;
+  document.getElementById("result-screen").classList.remove("active");
+  document.getElementById("start-screen").classList.add("active");
+}
+</script>
+</body>
+</html>
